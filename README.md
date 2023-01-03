@@ -29,7 +29,7 @@ This folder contains code used from huggingface to train Distil* as well as exam
 
 ### Initialize distiled checkpoint (default to roberta for 6 layers)
 ```bash
-  bash bashs/03-download_dump.sh
+  bash bashs/4-extract_layer.sh
 ```
 
 ### Train distiled student
