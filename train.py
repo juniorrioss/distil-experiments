@@ -113,7 +113,9 @@ def main():
 
     parser = argparse.ArgumentParser(description="Training")
     parser.add_argument(
-        "--force", action="store_true", help="Overwrite dump_path if it already exists."
+        "--force",
+        action="store_false",
+        help="Overwrite dump_path if it already exists.",
     )
 
     parser.add_argument(
@@ -266,9 +268,7 @@ def main():
     parser.add_argument(
         "--warmup_prop", default=0.05, type=float, help="Linear warmup proportion."
     )
-    parser.add_argument(
-        "--weight_decay", default=0.0, type=float, help="Weight decay if we apply some."
-    )
+
     parser.add_argument(
         "--learning_rate",
         default=5e-4,
@@ -316,6 +316,41 @@ def main():
     parser.add_argument(
         "--checkpoint_interval", type=int, default=4000, help="Checkpoint interval."
     )
+    # -- ADAN ARGUMENTS --
+    parser.add_argument(
+        "--max-grad-norm",
+        type=float,
+        default=0.0,
+        help="if the l2 norm is large than this hyper-parameter, then we clip the gradient  (default: 0.0, no gradient clip)",
+    )
+    parser.add_argument(
+        "--weight-decay",
+        type=float,
+        default=0.02,
+        help="weight decay, similar one used in AdamW (default: 0.02)",
+    )
+    parser.add_argument(
+        "--opt-eps",
+        default=None,
+        type=float,
+        metavar="EPSILON",
+        help="optimizer epsilon to avoid the bad case where second-order moment is zero (default: None, use opt default 1e-8 in adan)",
+    )
+    parser.add_argument(
+        "--opt-betas",
+        default=None,
+        type=float,
+        nargs="+",
+        metavar="BETA",
+        help="optimizer betas in Adan (default: None, use opt default [0.98, 0.92, 0.99] in Adan)",
+    )
+    parser.add_argument(
+        "--no-prox",
+        action="store_true",
+        default=False,
+        help="whether perform weight decay like AdamW (default=False)",
+    )
+
     args = parser.parse_args()
     sanity_checks(args)
 
@@ -355,7 +390,8 @@ def main():
         special_tok_ids[tok_name] = tokenizer.all_special_ids[idx]
     logger.info(f"Special tokens {special_tok_ids}")
     args.special_tok_ids = special_tok_ids
-    args.max_model_input_size = tokenizer.max_model_input_sizes[args.teacher_name]
+    args.max_model_input_size = 512  # tokenizer.max_model_input_sizes[args.teacher]
+    # {'roberta-base': 512, 'roberta-large': 512, 'roberta-large-mnli': 512, 'distilroberta-base': 512, 'roberta-base-openai-detector': 512, 'roberta-large-openai-detector': 512}
 
     # DATA LOADER #
     logger.info(f"Loading data from {args.data_file}")

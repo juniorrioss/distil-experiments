@@ -32,6 +32,7 @@ from transformers import get_linear_schedule_with_warmup
 from utils import logger
 import wandb
 from torch import autocast
+from adan import Adan
 
 
 try:
@@ -177,12 +178,13 @@ class Distiller:
             "------ Number of parameters (student): %i"
             % sum([p.numel() for p in self.student.parameters()])
         )
-        self.optimizer = AdamW(
-            optimizer_grouped_parameters,
-            lr=params.learning_rate,
-            eps=params.adam_epsilon,
-            betas=(0.9, 0.98),
-        )
+        # self.optimizer = AdamW(
+        #     optimizer_grouped_parameters,
+        #     lr=params.learning_rate,
+        #     eps=params.adam_epsilon,
+        #     betas=(0.9, 0.98),
+        # )
+        self.optimizer = Adan(optimizer_grouped_parameters, lr=params.learning_rate, weight_decay=params.weight_decay, betas=params.opt_betas, eps = params.opt_eps, max_grad_norm=params.max_grad_norm, no_prox=params.no_prox)
 
         warmup_steps = math.ceil(num_train_optimization_steps * params.warmup_prop)
         self.scheduler = get_linear_schedule_with_warmup(
@@ -651,7 +653,7 @@ class Distiller:
             self.log_wandb()
             self.last_log = time.time()
         if self.n_total_iter % self.params.checkpoint_interval == 0:
-            self.save_checkpoint()
+            self.save_checkpoint(checkpoint_name=f"checkpoint_{self.n_total_iter}.pth")
 
     def log_wandb(self):
         """
